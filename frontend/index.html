@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群馬県観光ポータル - ぐんまの魅力を発見</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🗾 群馬県観光ポータル</div>
+                <nav>
+                    <ul>
+                        <li><a href="index.html">ホーム</a></li>
+                        <li><a href="spots.html">観光スポット</a></li>
+                        <li><a href="onsen.html">温泉</a></li>
+                        <li><a href="gourmet.html">グルメ</a></li>
+                        <li><a href="events.html">イベント</a></li>
+                        <li><a href="access.html">アクセス</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>ようこそ、群馬県へ</h1>
+            <p>温泉・自然・グルメが楽しめる、魅力あふれる群馬をご案内します</p>
+            <a href="spots.html" class="btn">観光スポットを探す</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>群馬の魅力</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">♨️</div>
+                    <h3>日本有数の温泉地</h3>
+                    <p>草津温泉、伊香保温泉、四万温泉など、名湯が揃う温泉王国。心身ともに癒される温泉めぐりをお楽しみください。</p>
+                    <a href="onsen.html" class="feature-link">温泉情報を見る →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏔️</div>
+                    <h3>豊かな自然</h3>
+                    <p>尾瀬国立公園、谷川岳、榛名山など、四季折々の美しい自然が広がります。ハイキングやトレッキングに最適です。</p>
+                    <a href="nature.html" class="feature-link">自然スポットを見る →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🍜</div>
+                    <h3>絶品グルメ</h3>
+                    <p>水沢うどん、焼きまんじゅう、下仁田ネギなど、群馬ならではの郷土料理をご堪能ください。</p>
+                    <a href="gourmet.html" class="feature-link">グルメ情報を見る →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3>歴史と文化</h3>
+                    <p>世界遺産の富岡製糸場をはじめ、歴史的建造物や文化施設が数多く点在しています。</p>
+                    <a href="culture.html" class="feature-link">文化施設を見る →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎢</div>
+                    <h3>レジャー施設</h3>
+                    <p>家族で楽しめるテーマパークやアクティビティが充実。大人も子供も一日中楽しめます。</p>
+                    <a href="leisure.html" class="feature-link">レジャー施設を見る →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3>イベント・祭り</h3>
+                    <p>高崎だるま市、桐生八木節まつりなど、年間を通じて様々なイベントが開催されています。</p>
+                    <a href="events.html" class="feature-link">イベント情報を見る →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="popular">
+        <div class="container">
+            <h2>人気の観光スポット</h2>
+            <div class="spot-grid">
+                <div class="spot-card">
+                    <div class="spot-image">草津温泉湯畑</div>
+                    <div class="spot-content">
+                        <h3>草津温泉</h3>
+                        <p>日本三名泉の一つ。湯畑を中心に広がる温泉街は、昔ながらの風情を残しています。</p>
+                        <a href="spots/kusatsu.html" class="spot-link">詳細を見る →</a>
+
+                        <!-- チェックイン機能 -->
+                        <div class="checkin-section">
+                            <label for="visit-date-kusatsu">訪問日:</label>
+                            <input type="date" id="visit-date-kusatsu" class="checkin-date" />
+                            <button class="checkin-btn" onclick="checkIn('草津温泉', 'kusatsu')">
+                                ✓ ここに行った！
+                            </button>
+                            <div id="checkin-display-kusatsu" class="checkin-display"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="spot-card">
+                    <div class="spot-image">富岡製糸場</div>
+                    <div class="spot-content">
+                        <h3>富岡製糸場</h3>
+                        <p>世界遺産に登録された日本初の本格的な製糸工場。明治の産業革命遺産です。</p>
+                        <a href="spots/tomioka.html" class="spot-link">詳細を見る →</a>
+
+                        <!-- チェックイン機能 -->
+                        <div class="checkin-section">
+                            <label for="visit-date-tomioka">訪問日:</label>
+                            <input type="date" id="visit-date-tomioka" class="checkin-date" />
+                            <button class="checkin-btn" onclick="checkIn('富岡製糸場', 'tomioka')">
+                                ✓ ここに行った！
+                            </button>
+                            <div id="checkin-display-tomioka" class="checkin-display"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="spot-card">
+                    <div class="spot-image">尾瀬ヶ原</div>
+                    <div class="spot-content">
+                        <h3>尾瀬国立公園</h3>
+                        <p>本州最大の高層湿原。ミズバショウやニッコウキスゲなど、四季折々の花が楽しめます。</p>
+                        <a href="spots/oze.html" class="spot-link">詳細を見る →</a>
+
+                        <!-- チェックイン機能 -->
+                        <div class="checkin-section">
+                            <label for="visit-date-oze">訪問日:</label>
+                            <input type="date" id="visit-date-oze" class="checkin-date" />
+                            <button class="checkin-btn" onclick="checkIn('尾瀬国立公園', 'oze')">
+                                ✓ ここに行った！
+                            </button>
+                            <div id="checkin-display-oze" class="checkin-display"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="nearby-spots">
+        <div class="container">
+            <h2>近くの観光地を探す</h2>
+            <p>現在地から近い観光地を表示します</p>
+            <button id="show-nearby-btn" class="nearby-btn">📍 近くの観光地を表示</button>
+            <div id="nearby-results" class="nearby-results"></div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>観光情報</h3>
+                    <ul>
+                        <li><a href="spots.html">観光スポット</a></li>
+                        <li><a href="onsen.html">温泉情報</a></li>
+                        <li><a href="gourmet.html">グルメ・特産品</a></li>
+                        <li><a href="accommodation.html">宿泊施設</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>アクセス・交通</h3>
+                    <ul>
+                        <li><a href="access.html">群馬へのアクセス</a></li>
+                        <li><a href="transport.html">県内の交通機関</a></li>
+                        <li><a href="parking.html">駐車場情報</a></li>
+                        <li><a href="map.html">観光マップ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>お役立ち情報</h3>
+                    <ul>
+                        <li><a href="weather.html">天気・気候</a></li>
+                        <li><a href="emergency.html">緊急時の連絡先</a></li>
+                        <li><a href="wifi.html">Wi-Fiスポット</a></li>
+                        <li><a href="credits.html">画像クレジット</a></li>
+                        <li><a href="contact.html">お問い合わせ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>SNS</h3>
+                    <ul>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">Facebook</a></li>
+                        <li><a href="#">Instagram</a></li>
+                        <li><a href="#">YouTube</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 群馬県観光ポータル. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* チェックイン機能のスタイル */
+        .checkin-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .checkin-section label {
+            display: block;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .checkin-date {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+
+        .checkin-date:focus {
+            outline: none;
+            border-color: #4a7c59;
+        }
+
+        .checkin-btn {
+            width: 100%;
+            padding: 12px;
+            background: #4a7c59;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .checkin-btn:hover {
+            background: #3a6249;
+        }
+
+        .checkin-btn:active {
+            transform: scale(0.98);
+        }
+
+        .checkin-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-left: 4px solid #4a7c59;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #2e7d32;
+            font-weight: 500;
+            display: none;
+        }
+
+        .checkin-display.show {
+            display: block;
+        }
+
+        /* 近くの観光地セクションのスタイル */
+        .nearby-spots {
+            padding: 60px 0;
+            background: #f8f9fa;
+        }
+
+        .nearby-spots h2 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .nearby-spots p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .nearby-btn {
+            display: block;
+            margin: 0 auto 30px;
+            padding: 15px 40px;
+            background: #4a7c59;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .nearby-btn:hover {
+            background: #3a6249;
+        }
+
+        .nearby-results {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .nearby-spot-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nearby-spot-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .nearby-spot-distance {
+            font-size: 1rem;
+            color: #4a7c59;
+            font-weight: bold;
+        }
+
+        .nearby-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .nearby-error {
+            text-align: center;
+            padding: 40px;
+            color: #e53e3e;
+            font-size: 1.1rem;
+        }
+    </style>
+
+    <script>
+        /**
+         * チェックイン機能
+         * バグ: 未来の日付でもチェックインできてしまう
+         */
+        function checkIn(spotName, spotId) {
+            const dateInput = document.getElementById(`visit-date-${spotId}`);
+            const selectedDate = dateInput.value;
+
+            // バグ1: 日付が選択されていないかチェックしていない
+            // バグ2: 未来の日付かどうかをチェックしていない
+
+            if (selectedDate) {
+                // localStorageに保存
+                const checkinData = {
+                    spot: spotName,
+                    date: selectedDate,
+                    checkedAt: new Date().toISOString()
+                };
+
+                localStorage.setItem(`checkin_${spotId}`, JSON.stringify(checkinData));
+
+                alert(`${spotName}へのチェックインを記録しました！\n訪問日: ${selectedDate}`);
+
+                // 日付入力をクリア
+                dateInput.value = '';
+
+                // 表示を更新
+                updateCheckinDisplay(spotId);
+            } else {
+                alert('訪問日を選択してください');
+            }
+        }
+
+        /**
+         * チェックイン履歴の表示を更新
+         */
+        function updateCheckinDisplay(spotId) {
+            const checkinData = localStorage.getItem(`checkin_${spotId}`);
+            const displayElement = document.getElementById(`checkin-display-${spotId}`);
+
+            if (checkinData && displayElement) {
+                const data = JSON.parse(checkinData);
+                displayElement.textContent = `✓ ${data.date} に訪問済み`;
+                displayElement.classList.add('show');
+            }
+        }
+
+        // ページ読み込み時に過去のチェックイン情報を表示
+        window.addEventListener('DOMContentLoaded', function() {
+            const spots = ['kusatsu', 'tomioka', 'oze'];
+            spots.forEach(spotId => {
+                updateCheckinDisplay(spotId);
+            });
+
+            // 近くの観光地表示ボタンのイベントリスナー
+            const showNearbyBtn = document.getElementById('show-nearby-btn');
+            if (showNearbyBtn) {
+                showNearbyBtn.addEventListener('click', showNearbySpots);
+            }
+        });
+
+        /**
+         * 近くの観光地を表示する機能
+         * Issue D のバグ: formatDistance関数がundefinedを返すため、距離が正しく表示されない
+         */
+        async function showNearbySpots() {
+            const resultsDiv = document.getElementById('nearby-results');
+
+            // ローディング表示
+            resultsDiv.innerHTML = '<div class="nearby-loading">現在地を取得中...</div>';
+
+            // Geolocation APIで現在地を取得
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+
+                        // ローディング表示を更新
+                        resultsDiv.innerHTML = '<div class="nearby-loading">近くの観光地を検索中...</div>';
+
+                        try {
+                            // API呼び出し（api-client.jsを読み込む必要がある）
+                            const response = await fetch(`/api/spots/nearby?lat=${lat}&lon=${lon}`);
+                            const spots = await response.json();
+
+                            // 結果を表示
+                            if (spots.length === 0) {
+                                resultsDiv.innerHTML = '<div class="nearby-error">近くの観光地が見つかりませんでした</div>';
+                            } else {
+                                let html = '';
+                                spots.forEach(spot => {
+                                    // Issue D のバグ: formatDistance関数がundefinedを返す
+                                    const distance = formatDistance(spot.distance);
+                                    html += `
+                                        <div class="nearby-spot-item">
+                                            <div class="nearby-spot-name">${spot.spot_name}</div>
+                                            <div class="nearby-spot-distance">${distance}</div>
+                                        </div>
+                                    `;
+                                });
+                                resultsDiv.innerHTML = html;
+                            }
+                        } catch (error) {
+                            console.error('エラー:', error);
+                            resultsDiv.innerHTML = '<div class="nearby-error">観光地の取得に失敗しました</div>';
+                        }
+                    },
+                    function(error) {
+                        console.error('位置情報取得エラー:', error);
+                        resultsDiv.innerHTML = '<div class="nearby-error">現在地を取得できませんでした。位置情報の使用を許可してください。</div>';
+                    }
+                );
+            } else {
+                resultsDiv.innerHTML = '<div class="nearby-error">お使いのブラウザは位置情報に対応していません</div>';
+            }
+        }
+    </script>
+
+    <!-- api-client.jsを読み込む -->
+    <script src="api-client.js"></script>
+</body>
+</html>
