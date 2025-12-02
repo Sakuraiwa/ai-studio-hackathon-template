@@ -20,7 +20,7 @@
 ## 🤖 使用したAIサービス / AI Services Used
 <!-- AIを使用してIssueの対応を行った場合、使用したAIサービス名を必ず記載すること -->
 <!-- If you used AI to address the issue, please specify the AI service name -->
-使用したAIサービス: ＜AIサービス名＞
+使用したAIサービス: ＜Github Copilot, ClaudeCode, ChatGPT, 未使用＞
 
 ## 📸 スクリーンショット / Screenshots
 <!-- スタイルなどの変更の場合はスクリーンショットがあるとレビューしやすいです -->
