@@ -19,16 +19,16 @@ git clone <your-repository-url>
 cd ai-studio-hackathon
 
 # イメージをビルドして起動
-docker-compose up --build
+docker compose up --build
 
 # バックグラウンドで起動する場合（推奨）
-docker-compose up -d
+docker compose up -d
 
 # ログを確認する場合
-docker-compose logs -f
+docker compose logs -f
 
 # 停止する場合
-docker-compose down
+docker compose down
 ```
 
 #### ブラウザでアクセス
@@ -46,16 +46,16 @@ docker-compose down
 #### データベースを再初期化する場合
 ```bash
 # コンテナとボリュームを削除
-docker-compose down -v
+docker compose down -v
 
 # 再起動（自動的にデータベースが初期化されます）
-docker-compose up -d
+docker compose up -d
 ```
 
 #### トラブルシューティング
 - **ポート3001が既に使用されている**: 他のアプリケーションを停止してください
 - **Dockerが起動しない**: Docker Desktopが起動していることを確認してください
-- **データベースエラー**: `docker-compose down -v` で完全にクリーンアップしてから再起動してください
+- **データベースエラー**: `docker compose down -v` で完全にクリーンアップしてから再起動してください
 
 ## 🔑 テスト用ログイン情報
 - **ユーザーID**: 1
@@ -73,16 +73,17 @@ docker-compose up -d
 
 ## 🐛 学習の進め方
 
-### 実装済みバグ問題: 合計39問
+### 実装済みバグ問題: 合計42問
 
 | 難易度 | 問題数 | 内容 |
 |--------|--------|------|
 | **超初級 (level_1)** | 10問 | HTML/CSSの基本的なミス |
-| **初級 (level_2)** | 10問 | JavaScriptの基本バグ、簡単なバリデーション |
-| **中級 (level_3)** | 12問 | XSS、SQLインジェクション、権限チェック等 |
-| **上級 (level_4)** | 7問 | トランザクション、N+1クエリ、パフォーマンス等 |
+| **初級 (level_2)** | 10問 | JavaScriptの基本バグ |
+| **中級 (level_3)** | 10問 | バリデーション、エラーハンドリング |
+| **上級 (level_4)** | 5問 | セキュリティ脆弱性（XSS、SQLインジェクション等） |
+| **最上級 (level_5)** | 7問 | パフォーマンス、データ整合性 |
 
-各バグの詳細は `issues/level_1/` 〜 `issues/level_4/` フォルダを参照してください。
+各バグの詳細は `issues/level_1/` 〜 `issues/level_5/` フォルダを参照してください。
 
 ### 学習フロー
 
@@ -119,8 +120,9 @@ docker-compose up -d
 #### 4. 利用可能なラベル
 - `level_1/A` 〜 `level_1/J` (10個)
 - `level_2/A` 〜 `level_2/J` (10個)
-- `level_3/A` 〜 `level_3/L` (12個)
-- `level_4/A` 〜 `level_4/G` (7個)
+- `level_3/A` 〜 `level_3/J` (10個)
+- `level_4/A` 〜 `level_4/E` (5個)
+- `level_5/A` 〜 `level_5/G` (7個)
 
 ## 📚 さらに詳しく知りたい場合
 
