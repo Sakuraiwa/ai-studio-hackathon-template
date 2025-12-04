@@ -42,9 +42,9 @@
 |-----------|------------|---------------|--------------|------|
 | level_2/A | ランキングが0位から始まっている | JavaScript | frontend/stats.js | 5 |
 | level_2/B | イベント開催日がデータベース形式のまま表示 | JavaScript | frontend/events.js | 5 |
-| level_2/C | 距離フォーマット関数がundefinedを返す（return文なし） | JavaScript | frontend/api-client.js | 5 |
+| level_2/C | 距離フォーマット関数がundefinedを返す | JavaScript | frontend/api-client.js | 5 |
 | level_2/D | 平均評価の小数点以下が長すぎる | JavaScript | frontend/spot-detail.js | 5 |
-| level_2/E | 星評価の数が正しくない（Math.ceil使用） | JavaScript | frontend/spots.js | 5 |
+| level_2/E | 星評価の数が正しくない | JavaScript | frontend/spots.js | 5 |
 | level_2/F | 未来の日付でチェックインできる | JavaScript | frontend/index.html | 5 |
 | level_2/G | 検索結果件数が表示されない | JavaScript | frontend/events.js | 5 |
 | level_2/H | 棒グラフの幅が正しく計算されていない | JavaScript | frontend/stats.js | 5 |
