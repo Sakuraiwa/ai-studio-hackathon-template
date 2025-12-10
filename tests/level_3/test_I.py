@@ -6,89 +6,120 @@ Level 3 - Issue I のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
+from playwright.sync_api import sync_playwright
 
 
-def check_error_handling():
+def test_error_handling():
     """
-    event_controller.pyのget_eventsメソッドでエラーハンドリングが実装されているかをチェック
+    events.htmlで不正なパラメータを指定してエラーハンドリングが正しく動作するかをチェック
     """
-    project_root = Path(__file__).parent.parent.parent
-    event_controller = project_root / "app" / "controllers" / "event_controller.py"
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
 
-    if not event_controller.exists():
-        print(f"❌ エラー: {event_controller} が見つかりません")
-        return False
+        # JavaScriptエラーをキャプチャ
+        js_errors = []
+        def log_error(error):
+            js_errors.append(str(error))
+            print(f"JavaScript error: {error}")
+        page.on('pageerror', log_error)
 
-    with open(event_controller, 'r', encoding='utf-8') as f:
-        content = f.read()
+        # コンソールエラーもキャプチャ
+        console_errors = []
+        def log_console(msg):
+            if msg.type == 'error':
+                console_errors.append(msg.text)
+                print(f"Console error: {msg.text}")
+        page.on('console', log_console)
 
-    print("エラーハンドリングの実装確認を開始します\n")
+        try:
+            # 不正な月パラメータでイベントページにアクセス
+            print("不正な月パラメータでイベントページにアクセスしています...")
+            page.goto('http://localhost:3001/events.html?month=invalid', wait_until='networkidle')
 
-    # コメントを除外したコードを取得
-    lines = content.split('\n')
-    in_multiline_comment = False
-    in_get_events = False
-    method_code = []
+            # ページが読み込まれるまで待機
+            page.wait_for_timeout(2000)
 
-    for line in lines:
-        stripped = line.strip()
+            # スタックトレースが露出していないかチェック
+            page_content = page.content()
 
-        if '/*' in stripped or "'''" in stripped or '"""' in stripped:
-            in_multiline_comment = not in_multiline_comment
+            # スタックトレースの典型的なパターン
+            stack_trace_patterns = [
+                'Traceback',
+                'File "',
+                'line ',
+                '.py"',
+                'raise ',
+                'Exception:',
+                'Error:',
+                'at Object.',
+                'at Function.'
+            ]
 
-        if in_multiline_comment:
-            continue
+            has_stack_trace = False
+            for pattern in stack_trace_patterns:
+                if pattern in page_content and ('python' in page_content.lower() or 'traceback' in page_content.lower()):
+                    has_stack_trace = True
+                    print(f"⚠️  スタックトレースのパターンを検出: {pattern}")
+                    break
 
-        # get_eventsメソッドの範囲を特定
-        if 'def get_events' in line:
-            in_get_events = True
+            # エラーメッセージが適切に処理されているか確認
+            if has_stack_trace:
+                print("❌ 不合格: スタックトレースがユーザーに露出しています")
+                browser.close()
+                return False
 
-        if in_get_events:
-            # コメント行でない場合のみ追加
-            if not stripped.startswith('#'):
-                method_code.append(line)
-            # 次のメソッドやルートの定義が来たら終了
-            if (line.strip().startswith('def ') or line.strip().startswith('@')) and 'def get_events' not in line and '@event_bp.route' not in line:
-                in_get_events = False
+            # 適切なエラーメッセージが表示されているか確認
+            error_elements = page.locator('.error-message, .alert, [role="alert"]')
+            if error_elements.count() > 0:
+                print("✅ 適切なエラーメッセージが表示されています")
 
-    method_code_str = '\n'.join(method_code)
+            # ページが正常に表示されているか（エラーで停止していないか）
+            events_container = page.locator('.events-container, .container, main')
+            if events_container.count() > 0:
+                print("✅ ページが正常に表示されました")
+            else:
+                print("⚠️  ページコンテナを確認できませんでしたが、スタックトレースは露出していません")
 
-    # エラーハンドリングのパターン
-    has_try = bool(re.search(r'\btry\s*:', method_code_str))
-    has_except = bool(re.search(r'\bexcept\s+', method_code_str))
-    has_error_response = bool(re.search(r"jsonify\s*\(\s*\{.*['\"]error['\"]", method_code_str))
-    has_status_code = bool(re.search(r'\),\s*\d{3}\s*$', method_code_str, re.MULTILINE))
+            browser.close()
 
-    print("チェック結果:")
-    print(f"  try文の使用: {'✅ あり' if has_try else '❌ なし'}")
-    print(f"  except文の使用: {'✅ あり' if has_except else '❌ なし'}")
-    print(f"  エラーレスポンス: {'✅ あり' if has_error_response else '❌ なし'}")
-    print(f"  HTTPステータスコード: {'✅ あり' if has_status_code else '❌ なし'}")
-    print()
+            if not has_stack_trace:
+                print("✅ 合格: エラーハンドリングが正しく実装されています")
+                print("   不正なパラメータでもスタックトレースが露出しません")
+                return True
+            else:
+                return False
 
-    if has_try and has_except:
-        print("✅ 合格: エラーハンドリングが実装されています")
-        return True
-    else:
-        print("❌ 不合格: エラーハンドリングが実装されていません。Issue Iの「どうあるべきか」を確認してください。")
-        return False
+        except Exception as e:
+            print(f"❌ エラー: テスト実行中にエラーが発生しました: {e}")
+            browser.close()
+            return False
 
 
 def main():
     print("=" * 60)
-    print("Level 3 - Issue I: イベントコントローラーのエラーハンドリングチェック")
+    print("Level 3 - Issue I: エラーハンドリングチェック")
     print("=" * 60)
+    print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
+    print("=" * 60)
+    print()
 
-    result = check_error_handling()
+    result = test_error_handling()
 
+    print()
     print("=" * 60)
     if result:
-        print("🎉 テスト合格！")
+        print("✅ テスト合格")
+        print()
+        print("エラーハンドリングが正しく実装されています。")
+        print("例外発生時にスタックトレースが露出しません。")
         sys.exit(0)
     else:
-        print("💔 テスト不合格")
+        print("❌ テスト不合格")
+        print()
+        print("エラーハンドリングに問題があります。")
+        print("try-exceptでエラーをキャッチして適切なエラーレスポンスを返してください。")
+        print("Issue Iの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 

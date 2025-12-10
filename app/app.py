@@ -27,7 +27,7 @@ from controllers.static_controller import static_bp
 # Flaskアプリケーションの作成
 app = Flask(__name__)
 app.config.from_object(Config)
-# 上級バグ#4: CORS設定が緩すぎる
+# CORS設定が緩すぎる
 # 全てのオリジン（*）からのアクセスを許可している
 # 悪意のあるサイトからAPIを呼び出される可能性がある
 # 本来は CORS(app, origins=['http://localhost:3001']) のように制限すべき

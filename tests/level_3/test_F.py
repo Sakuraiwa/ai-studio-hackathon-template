@@ -6,70 +6,108 @@ Level 3 - Issue F のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
+import requests
+import random
 
 
-def check_character_limit():
+def test_review_length_limit():
     """
-    review_service.pyのcreate_reviewメソッドで文字数制限が実装されているかをチェック
+    レビュー投稿APIで文字数制限が実装されているかをチェック
     """
-    project_root = Path(__file__).parent.parent.parent
-    review_service = project_root / "app" / "services" / "review_service.py"
+    base_url = 'http://localhost:3001/api/reviews'
 
-    if not review_service.exists():
-        print(f"❌ エラー: {review_service} が見つかりません")
-        return False
+    print("レビュー内容の文字数制限チェックを開始します\n")
 
-    with open(review_service, 'r', encoding='utf-8') as f:
-        content = f.read()
+    # テスト用の非常に長いレビュー内容（10万文字）
+    very_long_review = 'あ' * 100000
 
-    print("文字数制限の実装確認を開始します\n")
+    # 正常な長さのレビュー内容
+    normal_review = 'とても良かったです。また来たいと思います。'
 
-    # コメントを除外したコードを取得
-    lines = content.split('\n')
-    in_multiline_comment = False
-    in_create_review = False
-    method_code = []
+    # 重複エラーを避けるため、ランダムなuser_idとspot_idを使用
+    test_user_id = random.randint(1000, 9999)
+    test_spot_id_1 = random.randint(1, 20)
+    test_spot_id_2 = random.randint(1, 20)
+    while test_spot_id_2 == test_spot_id_1:
+        test_spot_id_2 = random.randint(1, 20)
 
-    for line in lines:
-        stripped = line.strip()
+    print("=== 長すぎるレビューのテスト（10万文字） ===")
+    try:
+        response = requests.post(base_url, json={
+            'user_id': test_user_id,
+            'spot_id': test_spot_id_1,
+            'review_content': very_long_review,
+            'rating': 5
+        }, timeout=10)
 
-        # create_reviewメソッドの範囲を特定
-        if 'def create_review' in line and 'create_review_with_photo' not in line:
-            in_create_review = True
+        if response.status_code >= 400:
+            data = response.json()
+            error_msg = data.get('error', '')
+            # 文字数制限エラーかチェック
+            if '文字' in error_msg or '長' in error_msg or 'length' in error_msg.lower():
+                print(f"✅ 文字数制限エラーを返しました: {error_msg}")
+                long_review_rejected = True
+            else:
+                print(f"⚠️  エラーが返されましたが、文字数制限エラーではありません: {error_msg}")
+                long_review_rejected = False
+        elif response.status_code in [200, 201]:
+            data = response.json()
+            if data.get('success') == False:
+                error_msg = data.get('error', '')
+                if '文字' in error_msg or '長' in error_msg:
+                    print(f"✅ 文字数制限エラーを返しました: {error_msg}")
+                    long_review_rejected = True
+                else:
+                    print(f"⚠️  エラーレスポンスですが、文字数制限エラーではありません: {error_msg}")
+                    long_review_rejected = False
+            else:
+                print("❌ 長すぎるレビューが受け入れられてしまいました")
+                long_review_rejected = False
+        else:
+            print(f"❌ 予期しないステータスコード {response.status_code}")
+            long_review_rejected = False
 
-        if in_create_review:
-            # コメント行でない場合のみ追加
-            if not stripped.startswith('#'):
-                method_code.append(line)
-            # 次のメソッドの定義が来たら終了
-            if line.strip().startswith('def ') and 'def create_review' not in line:
-                in_create_review = False
+    except requests.exceptions.RequestException as e:
+        print(f"❌ リクエストエラー: {e}")
+        long_review_rejected = False
 
-    method_code_str = '\n'.join(method_code)
+    print()
+    print("=== 正常な長さのレビューのテスト ===")
+    try:
+        response = requests.post(base_url, json={
+            'user_id': test_user_id,
+            'spot_id': test_spot_id_2,
+            'review_content': normal_review,
+            'rating': 5
+        }, timeout=10)
 
-    # 文字数チェックのパターン
-    # パターン1: len()を使った長さチェック
-    has_len_check = bool(re.search(r"len\s*\(\s*review_data\['review_content'\]\s*\)\s*>", method_code_str))
-    has_len_check_alt = bool(re.search(r"len\s*\(\s*review_content\s*\)\s*>", method_code_str))
+        if response.status_code in [200, 201]:
+            data = response.json()
+            if data.get('success') == True or 'review_id' in data:
+                print("✅ 正常なレビューが受け入れられました")
+                normal_review_accepted = True
+            else:
+                print(f"❌ 正常なレビューが拒否されました: {data}")
+                normal_review_accepted = False
+        else:
+            print(f"❌ エラーステータス {response.status_code} を返しました")
+            normal_review_accepted = False
 
-    # パターン2: エラーメッセージ
-    has_length_error = bool(re.search(r'文字.*制限|長すぎ|文字数|超え', method_code_str))
+    except requests.exceptions.RequestException as e:
+        print(f"❌ リクエストエラー: {e}")
+        normal_review_accepted = False
 
-    print("チェック結果:")
-    print(f"  len()による長さチェック: {'✅ あり' if (has_len_check or has_len_check_alt) else '❌ なし'}")
-    print(f"  文字数エラーメッセージ: {'✅ あり' if has_length_error else '❌ なし'}")
     print()
 
-    if (has_len_check or has_len_check_alt) and has_length_error:
-        print("✅ 合格: レビュー内容の文字数制限が実装されています")
-        return True
-    elif (has_len_check or has_len_check_alt):
-        print("⚠️  文字数チェックはありますが、エラーメッセージが確認できません")
+    if long_review_rejected and normal_review_accepted:
+        print("✅ 合格: レビュー内容の文字数制限が正しく実装されています")
         return True
     else:
-        print("❌ 不合格: レビュー内容の文字数制限が実装されていません。Issue Fの「どうあるべきか」を確認してください。")
+        print("❌ 不合格: レビュー内容の文字数制限に問題があります")
+        if not long_review_rejected:
+            print("   長すぎるレビュー（10万文字）が拒否されていません")
+        if not normal_review_accepted:
+            print("   正常な長さのレビューが受け入れられていません")
         return False
 
 
@@ -77,15 +115,26 @@ def main():
     print("=" * 60)
     print("Level 3 - Issue F: レビュー内容の文字数制限チェック")
     print("=" * 60)
+    print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
+    print("=" * 60)
+    print()
 
-    result = check_character_limit()
+    result = test_review_length_limit()
 
+    print()
     print("=" * 60)
     if result:
-        print("🎉 テスト合格！")
+        print("✅ テスト合格")
+        print()
+        print("レビュー内容の文字数制限が正しく実装されています。")
+        print("長すぎるレビューは拒否され、正常な長さのレビューは受け入れられます。")
         sys.exit(0)
     else:
-        print("💔 テスト不合格")
+        print("❌ テスト不合格")
+        print()
+        print("レビュー内容の文字数制限が実装されていません。")
+        print("レビュー内容の文字数を制限し（例: 1000文字）、超えた場合はエラーを返してください。")
+        print("Issue Fの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 

@@ -54,7 +54,7 @@ function displayEvents(events) {
         };
         const areaDisplay = areaNames[event.area] || event.area;
 
-        // 中級バグ#4: XSS脆弱性（event_nameをエスケープせずにHTMLに挿入）
+        // XSS脆弱性（event_nameをエスケープせずにHTMLに挿入）
         eventElement.innerHTML = `
             <div class="event-date-box">
                 <div class="event-month">${month}月</div>

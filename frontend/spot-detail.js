@@ -22,7 +22,7 @@ async function loadSpotDetails() {
         return;
     }
 
-    // 中級バグ#7: ログアウト後もレビュー投稿フォームが表示される
+    // ログアウト後もレビュー投稿フォームが表示される
     // 本来はログイン状態を確認してフォーム表示を制御すべき
     // loadUserFromStorage();
     // if (isLoggedIn) {
@@ -153,7 +153,7 @@ async function loadReviews() {
                    </button>`
                 : '';
 
-            // 中級バグ#3: XSS脆弱性（review_contentをエスケープせずにHTMLに挿入）
+            // XSS脆弱性（review_contentをエスケープせずにHTMLに挿入）
             const reviewHtml = `
                 <div class="review-item" data-review-id="${review.review_id}">
                     <div class="review-header">

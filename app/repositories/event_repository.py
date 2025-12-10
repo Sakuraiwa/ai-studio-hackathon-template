@@ -76,7 +76,7 @@ class EventRepository:
 
         try:
             cursor = conn.cursor()
-            # 中級バグ#1: SQLインジェクション脆弱性（文字列連結を使用）
+            # SQLインジェクション脆弱性（文字列連結を使用）
             query = f'''
                 SELECT * FROM events
                 WHERE event_name LIKE '%{keyword}%'

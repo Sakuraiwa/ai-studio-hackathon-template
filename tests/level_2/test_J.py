@@ -6,64 +6,7 @@ Level 2 - Issue J のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
 from playwright.sync_api import sync_playwright
-
-
-def check_source_code():
-    """
-    spot-detail.jsでESCキーのイベントリスナーが実装されているかをチェック
-    """
-    project_root = Path(__file__).parent.parent.parent
-    spot_detail_js = project_root / "frontend" / "spot-detail.js"
-
-    if not spot_detail_js.exists():
-        print(f"❌ エラー: {spot_detail_js} が見つかりません")
-        return False
-
-    with open(spot_detail_js, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # コメントアウトされていないコードのみをチェック
-    # 複数行コメント（/* */）とコメントアウトされた行（//）を除外
-    active_code = []
-    in_multiline_comment = False
-
-    for line in lines:
-        stripped = line.strip()
-
-        # 複数行コメントの開始
-        if '/*' in stripped:
-            in_multiline_comment = True
-
-        # 複数行コメントの終了
-        if '*/' in stripped:
-            in_multiline_comment = False
-            continue
-
-        # コメント内または単一行コメントの場合はスキップ
-        if in_multiline_comment or stripped.startswith('//'):
-            continue
-
-        active_code.append(line)
-
-    active_code_str = ''.join(active_code)
-
-    # ESCキーのイベントリスナーが実装されているかをチェック
-    has_escape_check = bool(re.search(r"['\"]Escape['\"]", active_code_str))
-    has_keydown_listener = bool(re.search(r"addEventListener\(['\"]keydown['\"]", active_code_str))
-
-    if has_escape_check and has_keydown_listener:
-        print("✅ コードチェック合格: ESCキーのイベントリスナーが実装されています")
-        return True
-    else:
-        print("❌ コードチェック不合格: ESCキーのイベントリスナーが実装されていません")
-        if not has_keydown_listener:
-            print("  - keydownイベントリスナーが見つかりません")
-        if not has_escape_check:
-            print("  - 'Escape'キーのチェックが見つかりません")
-        return False
 
 
 def test_esc_key_closes_modal():
@@ -75,8 +18,6 @@ def test_esc_key_closes_modal():
         page = browser.new_page()
 
         try:
-            print("\n【ステップ1: 実際の動作をチェック】")
-
             # spot-detail.htmlにアクセス
             page.goto('http://localhost:3001/spot-detail.html?id=1', wait_until='networkidle')
 
@@ -85,17 +26,15 @@ def test_esc_key_closes_modal():
             page.wait_for_timeout(1000)
 
             # レビューに画像があるか確認
-            # レビュー画像はonclick属性にshowImageModalを持つimg要素
             review_images = page.locator('.reviews-list img[onclick*="showImageModal"]')
 
             if review_images.count() == 0:
-                print("⚠️  レビュー画像が見つかりませんでした")
-                print("  （画像がないとモーダルのテストができないため、ソースコードをチェックします）\n")
+                print("❌ エラー: レビュー画像が見つかりませんでした")
+                print("テストを実行するには、画像付きレビューが必要です")
                 browser.close()
-                print("【ステップ2: ソースコードをチェック】")
-                return check_source_code()
+                return False
 
-            print(f"レビュー画像を {review_images.count()} 個見つけました")
+            print(f"レビュー画像を {review_images.count()} 個見つけました\n")
 
             # 最初の画像をクリックしてモーダルを開く
             review_images.first.click()
@@ -112,6 +51,7 @@ def test_esc_key_closes_modal():
             print("✅ モーダルが表示されました")
 
             # ESCキーを押す
+            print("ESCキーを押します...")
             page.keyboard.press('Escape')
             page.wait_for_timeout(500)
 
@@ -137,16 +77,23 @@ def main():
     print("=" * 60)
     print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
     print("=" * 60)
+    print()
 
     result = test_esc_key_closes_modal()
 
+    print()
     print("=" * 60)
     if result:
-        print("🎉 テスト合格！")
+        print("✅ テスト合格")
+        print()
+        print("ESCキーでモーダルが正しく閉じるようになっています。")
         sys.exit(0)
     else:
-        print("💔 テスト不合格")
-        print("ESCキーでモーダルを閉じる機能に問題があります。Issue Jの「どうあるべきか」を確認してください。")
+        print("❌ テスト不合格")
+        print()
+        print("ESCキーでモーダルを閉じる機能に問題があります。")
+        print("keydownイベントリスナーでEscapeキーを監視してください。")
+        print("Issue Jの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 

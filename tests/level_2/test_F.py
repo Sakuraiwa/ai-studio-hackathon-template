@@ -6,125 +6,95 @@ Level 2 - Issue F のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
+from datetime import datetime, timedelta
+from playwright.sync_api import sync_playwright
 
 
-def check_source_code():
+def test_future_date_validation():
     """
-    index.htmlのcheckIn関数で日付バリデーションが実装されているかをチェック
+    index.htmlのチェックイン機能で未来の日付が拒否されるかをチェック
     """
-    project_root = Path(__file__).parent.parent.parent
-    index_html = project_root / "frontend" / "index.html"
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
 
-    if not index_html.exists():
-        print(f"❌ エラー: {index_html} が見つかりません")
-        return False
+        try:
+            # index.htmlにアクセス
+            page.goto('http://localhost:3001/index.html', wait_until='networkidle')
 
-    with open(index_html, 'r', encoding='utf-8') as f:
-        content = f.read()
+            # 人気の観光スポットセクションまでスクロール
+            popular_section = page.locator('#popularSpots')
+            if popular_section.count() > 0:
+                popular_section.scroll_into_view_if_needed()
 
-    print("checkIn関数の日付バリデーションチェックを開始します\n")
+            # 最初の観光地カードのチェックイン機能をテスト
+            # 訪問日入力フィールドを探す
+            date_input = page.locator('input[type="date"]').first
 
-    # checkIn関数を抽出
-    function_match = re.search(
-        r'function\s+checkIn\s*\([^)]*\)\s*\{(.*?)\n\s*\}',
-        content,
-        re.DOTALL
-    )
+            if date_input.count() == 0:
+                print("❌ エラー: 訪問日の入力フィールドが見つかりません")
+                browser.close()
+                return False
 
-    if not function_match:
-        print("❌ 不合格: checkIn関数が見つかりません")
-        return False
+            # 未来の日付を設定（明日）
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+            date_input.fill(tomorrow)
 
-    function_body = function_match.group(1)
+            print(f"未来の日付を入力: {tomorrow}")
 
-    # コメントアウトされていないコードを抽出
-    lines = function_body.split('\n')
-    active_lines = []
-    for line in lines:
-        stripped = line.strip()
-        # コメント行を除外
-        if not stripped.startswith('//') and '/*' not in stripped:
-            active_lines.append(line)
+            # ダイアログ（アラート）をキャプチャ
+            dialog_message = None
+            def handle_dialog(dialog):
+                nonlocal dialog_message
+                dialog_message = dialog.message
+                dialog.accept()
 
-    active_code = '\n'.join(active_lines)
+            page.on('dialog', handle_dialog)
 
-    # 必要な要素のチェック
-    checks_passed = []
-    checks_failed = []
+            # チェックインボタンをクリック
+            checkin_button = page.locator('button:has-text("ここに行った")').first
+            if checkin_button.count() == 0:
+                print("❌ エラー: チェックインボタンが見つかりません")
+                browser.close()
+                return False
 
-    # 1. new Date()で選択された日付をDate型に変換しているか
-    date_conversion = re.search(r'new\s+Date\s*\(\s*selectedDate\s*\)', active_code) or \
-                     re.search(r'new\s+Date\s*\(\s*[\'"]?\$\{selectedDate\}[\'"]?\s*\)', active_code)
+            checkin_button.click()
 
-    if date_conversion:
-        checks_passed.append("選択された日付のDate型への変換")
-    else:
-        checks_failed.append("選択された日付のDate型への変換（new Date(selectedDate)）")
+            # 少し待機してダイアログを確認
+            page.wait_for_timeout(1000)
 
-    # 2. 今日の日付を取得しているか
-    today_date = re.search(r'(const|let|var)\s+today\s*=\s*new\s+Date\s*\(\s*\)', active_code)
+            browser.close()
 
-    if today_date:
-        checks_passed.append("今日の日付の取得")
-    else:
-        checks_failed.append("今日の日付の取得（const today = new Date()）")
+            # エラーメッセージが表示されたかチェック
+            if dialog_message:
+                print(f"\n表示されたメッセージ: {dialog_message}")
 
-    # 3. 日付の比較を行っているか
-    date_comparison = re.search(r'(selected|selectedDate)\s*>\s*(today|todayDate)', active_code) or \
-                     re.search(r'(selected|selectedDate)\.getTime\(\)\s*>\s*(today|todayDate)\.getTime\(\)', active_code)
+                if '未来の日付' in dialog_message or '選択できません' in dialog_message:
+                    print("✅ 合格: 未来の日付が正しく拒否されました")
+                    return True
+                else:
+                    print("❌ 不合格: エラーメッセージが期待と異なります")
+                    print("期待されるメッセージ: 「未来の日付は選択できません」")
+                    return False
+            else:
+                print("❌ 不合格: 未来の日付に対するエラーメッセージが表示されませんでした")
+                return False
 
-    if date_comparison:
-        checks_passed.append("日付の比較処理")
-    else:
-        checks_failed.append("日付の比較処理（selected > today）")
-
-    # 4. 「未来の日付は選択できません」のエラーメッセージ
-    error_message = re.search(r'[\'"]未来の日付は選択できません[\'"]', active_code)
-
-    if error_message:
-        checks_passed.append("エラーメッセージの表示")
-    else:
-        checks_failed.append("エラーメッセージ「未来の日付は選択できません」")
-
-    # 結果の表示
-    print("チェック結果:")
-    print()
-
-    for check in checks_passed:
-        print(f"  ✅ {check}")
-
-    for check in checks_failed:
-        print(f"  ❌ {check}")
-
-    print()
-
-    if checks_failed:
-        print("❌ 不合格: 日付バリデーションが不完全です")
-        print()
-        print("不足している実装:")
-        for check in checks_failed:
-            print(f"  - {check}")
-        print()
-        print("ヒント:")
-        print("  1. new Date(selectedDate) で選択された日付をDate型に変換")
-        print("  2. const today = new Date() で今日の日付を取得")
-        print("  3. selected > today で未来かどうかを比較")
-        print("  4. 未来の場合は alert('未来の日付は選択できません') を表示")
-        return False
-
-    print("✅ 合格: 日付バリデーションが正しく実装されています")
-    return True
+        except Exception as e:
+            print(f"❌ エラー: テスト実行中にエラーが発生しました: {e}")
+            browser.close()
+            return False
 
 
 def main():
     print("=" * 60)
     print("Level 2 - Issue F: チェックイン機能の日付バリデーション")
     print("=" * 60)
+    print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
+    print("=" * 60)
     print()
 
-    success = check_source_code()
+    success = test_future_date_validation()
 
     print()
     print("=" * 60)
@@ -138,6 +108,7 @@ def main():
         print("❌ テスト不合格")
         print()
         print("日付バリデーションが不足しています。")
+        print("未来の日付を選択した場合、「未来の日付は選択できません」と表示してください。")
         print("Issue Fの「どうあるべきか」を確認してください。")
         sys.exit(1)
 

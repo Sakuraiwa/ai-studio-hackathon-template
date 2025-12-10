@@ -63,7 +63,7 @@ function handleLogout() {
     localStorage.removeItem('currentUser');
     updateLoginButton();
     alert('ログアウトしました');
-    // 中級バグ#7: spot-detail.htmlにいる場合、レビューフォームを非表示にする処理がない
+    // spot-detail.htmlにいる場合、レビューフォームを非表示にする処理がない
     // 本来はここでレビューフォームを非表示にすべき
 }
 

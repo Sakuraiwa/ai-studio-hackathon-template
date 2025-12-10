@@ -260,7 +260,7 @@ class APIClient {
 
 /**
  * 距離をフォーマットする（m → km変換）
- * Issue D のバグ: return文が抜けている
+ * return文が抜けている
  * @param {number} meters - メートル単位の距離
  * @returns {string} フォーマットされた距離文字列
  */

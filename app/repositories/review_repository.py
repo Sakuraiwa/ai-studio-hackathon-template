@@ -14,7 +14,7 @@ class ReviewRepository:
 
         try:
             cursor = conn.cursor()
-            # 上級バグ#5: N+1クエリ問題
+            # N+1クエリ問題
             # JOINを使わずにレビューだけ取得している
             # ユーザー名は後でservice層でループして取得することになり、N+1問題が発生する
             # 本来は JOIN users ON r.user_id = u.user_id でユーザー名も一緒に取得すべき

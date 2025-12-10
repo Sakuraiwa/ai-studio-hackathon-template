@@ -6,94 +6,131 @@ Level 3 - Issue G のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
+import sqlite3
+from playwright.sync_api import sync_playwright
 
 
-def check_null_handling():
+def test_null_handling():
     """
-    stats_service.pyのget_summaryメソッドでNULLハンドリングが実装されているかをチェック
+    レビューを全削除してから/api/statsにアクセスし、
+    平均評価がNULLの場合でもエラーが発生しないかをチェック
     """
-    project_root = Path(__file__).parent.parent.parent
-    stats_service = project_root / "app" / "services" / "stats_service.py"
+    db_path = '/tmp/ai-studio-hackathon-original/data/tourism_review.db'
+    backup_reviews = []
 
-    if not stats_service.exists():
-        print(f"❌ エラー: {stats_service} が見つかりません")
-        return False
+    with sync_playwright() as p:
+        # APIテスト用のrequestコンテキストを作成
+        request_context = p.request.new_context(base_url='http://localhost:3001')
 
-    with open(stats_service, 'r', encoding='utf-8') as f:
-        content = f.read()
+        try:
+            # 1. レビューをバックアップして全削除
+            print("レビューデータを一時的に削除しています...")
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-    print("NULLハンドリングの実装確認を開始します\n")
+            # 削除前のレビュー数を保存
+            cursor.execute('SELECT * FROM reviews')
+            backup_reviews = cursor.fetchall()
+            print(f"  削除前のレビュー数: {len(backup_reviews)}件")
 
-    # コメントを除外したコードを取得
-    lines = content.split('\n')
-    in_multiline_comment = False
-    in_get_summary = False
-    method_code = []
+            # レビューを全削除
+            cursor.execute('DELETE FROM reviews')
+            conn.commit()
+            conn.close()
+            print("  レビューを全削除しました")
 
-    for line in lines:
-        stripped = line.strip()
+            # 2. /api/stats/summaryにアクセス
+            print("\n/api/stats/summary にアクセスしています...")
+            response = request_context.get('/api/stats/summary')
 
-        # get_summaryメソッドの範囲を特定
-        if 'def get_summary' in line and 'get_summary_stats' not in line:
-            in_get_summary = True
+            print(f"  ステータスコード: {response.status}")
 
-        if in_get_summary:
-            # コメント行でない場合のみ追加
-            if not stripped.startswith('#'):
-                method_code.append(line)
-            # 次のメソッドの定義が来たら終了
-            if line.strip().startswith('def ') and 'def get_summary' not in line:
-                in_get_summary = False
+            # 3. 結果を判定
+            if response.status == 500:
+                print("\n❌ 不合格: 500エラーが発生しました")
+                print("   NULLハンドリングが実装されていません")
+                print("   avg_rating_overallがNULLの時にround()がエラーになっています")
+                result = False
+            elif response.status == 200:
+                data = response.json()
+                print(f"  レスポンス: {data}")
 
-    method_code_str = '\n'.join(method_code)
+                # avg_rating_overallが適切に処理されているか確認
+                if 'avg_rating_overall' in data:
+                    avg_rating = data['avg_rating_overall']
+                    # 0 または数値であればOK
+                    if avg_rating == 0 or (isinstance(avg_rating, (int, float)) and avg_rating >= 0):
+                        print("\n✅ 合格: NULLハンドリングが正しく実装されています")
+                        print(f"   avg_rating_overall = {avg_rating} (適切なデフォルト値)")
+                        result = True
+                    else:
+                        print(f"\n❌ 不合格: avg_rating_overallが不正な値です: {avg_rating}")
+                        result = False
+                else:
+                    print("\n❌ 不合格: avg_rating_overallがレスポンスに含まれていません")
+                    result = False
+            else:
+                print(f"\n❌ 不合格: 予期しないステータスコード: {response.status}")
+                result = False
 
-    # NULLチェックのパターン
-    # パターン1: if文でNoneチェック
-    has_none_check = bool(re.search(r"if.*avg_rating_overall.*is None|if.*avg_rating_overall.*== None", method_code_str))
-    has_not_none_check = bool(re.search(r"if.*avg_rating_overall.*is not None|if.*avg_rating_overall.*!= None", method_code_str))
+            # 4. レビューデータを復元
+            print("\nレビューデータを復元しています...")
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            for review in backup_reviews:
+                cursor.execute('''
+                    INSERT INTO reviews VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', review)
+            conn.commit()
+            conn.close()
+            print(f"  {len(backup_reviews)}件のレビューを復元しました")
 
-    # パターン2: or演算子でデフォルト値を設定
-    has_or_default = bool(re.search(r"avg_rating_overall\s+or\s+0", method_code_str))
+            request_context.dispose()
+            return result
 
-    # パターン3: 三項演算子でチェック
-    has_ternary = bool(re.search(r"0\s+if.*avg_rating_overall.*is None", method_code_str))
+        except Exception as e:
+            print(f"❌ エラー: テスト実行中にエラーが発生しました: {e}")
+            # エラーが起きても復元を試みる
+            try:
+                if backup_reviews:
+                    conn = sqlite3.connect(db_path)
+                    cursor = conn.cursor()
+                    for review in backup_reviews:
+                        cursor.execute('INSERT INTO reviews VALUES (?, ?, ?, ?, ?, ?, ?, ?)', review)
+                    conn.commit()
+                    conn.close()
+                    print(f"  {len(backup_reviews)}件のレビューを復元しました（エラー時）")
+            except Exception as restore_error:
+                print(f"  復元エラー: {restore_error}")
 
-    # パターン4: round()の前にチェック
-    # avg_rating_overallを含むif文の中でround()が呼ばれているかをチェック
-    has_check_before_round = bool(re.search(r"if\s+.*avg_rating_overall.*:\s*\n\s*.*round\s*\(\s*.*avg_rating", method_code_str, re.DOTALL))
-
-    print("チェック結果:")
-    print(f"  None/NULLチェック（if is None）: {'✅ あり' if has_none_check else '❌ なし'}")
-    print(f"  None/NULLチェック（if is not None）: {'✅ あり' if has_not_none_check else '❌ なし'}")
-    print(f"  デフォルト値設定（or演算子）: {'✅ あり' if has_or_default else '❌ なし'}")
-    print(f"  三項演算子でのチェック: {'✅ あり' if has_ternary else '❌ なし'}")
-    print(f"  round()前のチェック: {'✅ あり' if has_check_before_round else '❌ なし'}")
-    print()
-
-    # いずれかのNULLハンドリングパターンが実装されていればOK
-    if has_none_check or has_not_none_check or has_or_default or has_ternary or has_check_before_round:
-        print("✅ 合格: NULLハンドリングが実装されています")
-        return True
-    else:
-        print("❌ 不合格: NULLハンドリングが実装されていません。Issue Gの「どうあるべきか」を確認してください。")
-        return False
+            request_context.dispose()
+            return False
 
 
 def main():
     print("=" * 60)
     print("Level 3 - Issue G: 平均評価のNULLハンドリングチェック")
     print("=" * 60)
+    print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
+    print("=" * 60)
+    print()
 
-    result = check_null_handling()
+    result = test_null_handling()
 
+    print()
     print("=" * 60)
     if result:
-        print("🎉 テスト合格！")
+        print("✅ テスト合格")
+        print()
+        print("平均評価がNULLの場合のハンドリングが正しく実装されています。")
+        print("レビューが0件でもエラーが発生しません。")
         sys.exit(0)
     else:
-        print("💔 テスト不合格")
+        print("❌ テスト不合格")
+        print()
+        print("平均評価がNULLの場合のハンドリングに問題があります。")
+        print("NULLチェックを行い、NULLの場合は0または適切なデフォルト値を設定してください。")
+        print("Issue Gの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 

@@ -6,56 +6,7 @@ Level 3 - Issue D のテストスクリプト
 """
 
 import sys
-import re
-from pathlib import Path
 from playwright.sync_api import sync_playwright
-
-
-def check_source_code():
-    """
-    spot-detail.jsで星評価0のバリデーションが実装されているかをチェック
-    """
-    project_root = Path(__file__).parent.parent.parent
-    spot_detail_js = project_root / "frontend" / "spot-detail.js"
-
-    if not spot_detail_js.exists():
-        print(f"❌ エラー: {spot_detail_js} が見つかりません")
-        return False
-
-    with open(spot_detail_js, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # コメントアウトされていないコードのみをチェック
-    active_code = []
-    in_multiline_comment = False
-
-    for line in lines:
-        stripped = line.strip()
-
-        if '/*' in stripped:
-            in_multiline_comment = True
-
-        if '*/' in stripped:
-            in_multiline_comment = False
-            continue
-
-        if in_multiline_comment or stripped.startswith('//'):
-            continue
-
-        active_code.append(line)
-
-    active_code_str = ''.join(active_code)
-
-    # 星評価0のチェックが実装されているかを確認
-    # パターン: rating === '0' または rating == '0' または rating === 0
-    has_rating_check = bool(re.search(r"rating\s*===?\s*['\"]?0['\"]?", active_code_str))
-
-    if has_rating_check:
-        print("✅ コードチェック合格: 星評価0のバリデーションが実装されています")
-        return True
-    else:
-        print("❌ コードチェック不合格: 星評価0のバリデーションが実装されていません")
-        return False
 
 
 def test_rating_validation():
@@ -66,51 +17,50 @@ def test_rating_validation():
         browser = p.chromium.launch()
         page = browser.new_page()
 
-        try:
-            print("\n【ステップ1: 実際の動作をチェック】")
+        # コンソールログをキャプチャ
+        def log_console(msg):
+            print(f"Console: {msg.text}")
+        page.on('console', log_console)
 
+        try:
             # spot-detail.htmlにアクセス
             page.goto('http://localhost:3001/spot-detail.html?id=1', wait_until='networkidle')
 
-            # ログイン状態かチェック（ログインしていないとレビューフォームが表示されない）
+            # localStorageにテストユーザー情報を設定してログイン状態にする
+            page.evaluate("""
+                localStorage.setItem('currentUser', JSON.stringify({
+                    user_id: 1,
+                    name: 'テストユーザー'
+                }));
+            """)
+
+            # ページをリロードしてログイン状態を反映
+            page.reload(wait_until='networkidle')
+
+            print("テストユーザーでログインしました")
+
+            # レビューフォームが表示されるか確認
             review_form = page.locator('#reviewForm')
 
             if review_form.count() == 0:
-                print("⚠️  レビューフォームが見つかりませんでした")
-                print("  （ログインが必要な可能性があります。ソースコードをチェックします）\n")
+                print("❌ エラー: レビューフォームが見つかりませんでした")
                 browser.close()
-                print("【ステップ2: ソースコードをチェック】")
-                return check_source_code()
+                return False
 
-            print("レビューフォームを見つけました")
-
-            # レビューテキストを入力前にフォームが表示されているか確認
-            review_text = page.locator('#reviewText')
-
-            # フォームが表示されていない場合はソースコードチェックにフォールバック
-            if not review_text.is_visible():
-                print("⚠️  レビューフォームが表示されていません")
-                print("  （ログイン状態が必要です。ソースコードをチェックします）\n")
-                browser.close()
-                print("【ステップ2: ソースコードをチェック】")
-                return check_source_code()
+            print("✅ レビューフォームを見つけました")
 
             # レビューセクションまでスクロール
             page.evaluate("document.querySelector('#reviewForm').scrollIntoView()")
             page.wait_for_timeout(500)
 
-            # レビューテキストを入力（星評価は0のまま）
+            # 名前とレビューテキストを入力（星評価は0のまま）
+            page.fill('#reviewerName', 'テストユーザー')
+            review_text = page.locator('#reviewText')
             review_text.fill('テスト用のレビューです')
 
-            # 星評価が0のまま投稿ボタンをクリック
-            # HTMLのrequired属性を一時的に削除してJavaScriptバリデーションのみをテスト
-            page.evaluate("""
-                const ratingInput = document.getElementById('ratingValue');
-                if (ratingInput) {
-                    ratingInput.removeAttribute('required');
-                }
-            """)
+            print("レビューテキストを入力しました（星評価=0）")
 
+            # 星評価が0のまま投稿ボタンをクリック
             # ダイアログ（alert）をキャプチャ
             dialog_message = None
 
@@ -140,7 +90,7 @@ def test_rating_validation():
                     return False
             else:
                 print("❌ 不合格: 星評価0でもアラートが表示されませんでした")
-                print("  （JavaScriptバリデーションが実装されていない可能性があります）")
+                print("   JavaScriptバリデーションが実装されていない可能性があります")
                 return False
 
         except Exception as e:
@@ -155,16 +105,24 @@ def main():
     print("=" * 60)
     print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
     print("=" * 60)
+    print()
 
     result = test_rating_validation()
 
+    print()
     print("=" * 60)
     if result:
-        print("🎉 テスト合格！")
+        print("✅ テスト合格")
+        print()
+        print("星評価0のバリデーションが正しく実装されています。")
+        print("星評価が選択されていない場合、エラーメッセージが表示されます。")
         sys.exit(0)
     else:
-        print("💔 テスト不合格")
-        print("星評価バリデーションに問題があります。Issue Dの「どうあるべきか」を確認してください。")
+        print("❌ テスト不合格")
+        print()
+        print("星評価バリデーションに問題があります。")
+        print("星評価が0の場合、JavaScriptでエラーメッセージを表示してください。")
+        print("Issue Dの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 

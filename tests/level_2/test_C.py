@@ -6,91 +6,99 @@ Level 2 - Issue C のテストスクリプト
 """
 
 import sys
-import re
 from pathlib import Path
+from playwright.sync_api import sync_playwright
 
 
-def check_source_code():
+def test_distance_format():
     """
-    api-client.jsのformatDistance関数でreturn文が追加されているかをチェック
+    index.htmlの近隣観光地の距離が正しくフォーマットされているかをチェック
     """
-    project_root = Path(__file__).parent.parent.parent
-    api_client_js = project_root / "frontend" / "api-client.js"
+    with sync_playwright() as p:
+        # 位置情報の許可を最初から設定したコンテキストを作成
+        browser = p.chromium.launch()
+        context = browser.new_context(
+            geolocation={'latitude': 36.5, 'longitude': 138.5},
+            permissions=['geolocation']
+        )
+        page = context.new_page()
 
-    if not api_client_js.exists():
-        print(f"❌ エラー: {api_client_js} が見つかりません")
-        return False
+        try:
+            # index.htmlにアクセス
+            page.goto('http://localhost:3001/index.html', wait_until='networkidle')
 
-    with open(api_client_js, 'r', encoding='utf-8') as f:
-        content = f.read()
+            # 近くの観光地セクションまでスクロール
+            nearby_section = page.locator('#nearbySpots')
+            if nearby_section.count() > 0:
+                nearby_section.scroll_into_view_if_needed()
 
-    print("formatDistance関数のreturn文チェックを開始します\n")
+            # 「近くの観光地を表示」ボタンをクリック
+            nearby_button = page.locator('button:has-text("近くの観光地を表示")')
+            if nearby_button.count() == 0:
+                print("❌ エラー: '近くの観光地を表示'ボタンが見つかりません")
+                browser.close()
+                return False
 
-    # formatDistance関数を抽出
-    function_match = re.search(
-        r'function\s+formatDistance\s*\([^)]*\)\s*\{([^}]+)\}',
-        content,
-        re.DOTALL
-    )
+            nearby_button.click()
 
-    if not function_match:
-        print("❌ 不合格: formatDistance関数が見つかりません")
-        return False
+            # 観光地リストが表示されるまで待機（位置情報取得とAPI呼び出しに時間がかかる）
+            page.wait_for_selector('#nearby-results .nearby-spot-item', timeout=15000)
 
-    function_body = function_match.group(1)
+            # 表示された観光地の距離を取得
+            distance_elements = page.locator('#nearby-results .nearby-spot-distance')
 
-    # コメント行を除外
-    lines = function_body.split('\n')
-    active_lines = []
-    for line in lines:
-        stripped = line.strip()
-        # コメント行やコメントアウトされた行を除外
-        if not stripped.startswith('//') and not stripped.startswith('*'):
-            active_lines.append(line)
+            if distance_elements.count() == 0:
+                print("❌ エラー: 観光地の距離表示が見つかりません")
+                browser.close()
+                return False
 
-    active_code = '\n'.join(active_lines)
+            print(f"観光地を {distance_elements.count()} 個見つけました\n")
 
-    # return文の存在チェック（最低2つ必要: if分岐とelse分岐）
-    return_count = len(re.findall(r'\breturn\b', active_code))
+            all_valid = True
 
-    if return_count < 2:
-        print(f"❌ 不合格: return文が不足しています（見つかった数: {return_count}個、必要: 2個以上）")
-        print("\nformatDistance関数には少なくとも2つのreturn文が必要です：")
-        print("  1. meters >= 1000 の場合のreturn")
-        print("  2. else の場合のreturn")
-        print("\n現在のコード:")
-        print(function_body[:200] + "...")
-        return False
+            # 各距離表示をチェック
+            for i in range(min(5, distance_elements.count())):
+                distance_text = distance_elements.nth(i).text_content().strip()
+                spot_name = page.locator('#nearby-results .nearby-spot-name').nth(i).text_content().strip()
 
-    # より詳細なチェック: return文が適切な位置にあるか
-    # パターン1: return (meters / 1000).toFixed(1) + 'km'
-    km_return = re.search(r'return\s+\([^)]*meters[^)]*\/[^)]*1000[^)]*\)\.toFixed\(1\)\s*\+\s*[\'"]km[\'"]', active_code)
-    # パターン2: return meters + 'm'
-    m_return = re.search(r'return\s+meters\s*\+\s*[\'"]m[\'"]', active_code)
+                print(f"観光地 {i+1}: {spot_name} - 距離: {distance_text}")
 
-    if not km_return:
-        print("❌ 不合格: km表示のreturn文が正しく実装されていません")
-        print("期待される形式: return (meters / 1000).toFixed(1) + 'km';")
-        return False
+                # "undefined" が含まれていないかチェック
+                if 'undefined' in distance_text.lower():
+                    print(f"  ❌ 距離が 'undefined' と表示されています")
+                    all_valid = False
+                # 正しい形式（数字 + 'm' または 数字 + 'km'）かチェック
+                elif distance_text.endswith('m') or distance_text.endswith('km'):
+                    print(f"  ✅ 距離が正しくフォーマットされています")
+                else:
+                    print(f"  ❌ 距離の形式が正しくありません（期待: '○○m' または '○○km'）")
+                    all_valid = False
 
-    if not m_return:
-        print("❌ 不合格: m表示のreturn文が正しく実装されていません")
-        print("期待される形式: return meters + 'm';")
-        return False
+            print()
+            browser.close()
 
-    print("✅ 合格: formatDistance関数にreturn文が正しく実装されています")
-    print(f"  - km表示のreturn文: 実装済み")
-    print(f"  - m表示のreturn文: 実装済み")
-    return True
+            if all_valid:
+                print("✅ 合格: 距離が正しくフォーマットされています")
+                return True
+            else:
+                print("❌ 不合格: 距離表示に問題があります。Issue Cの「どうあるべきか」を確認してください。")
+                return False
+
+        except Exception as e:
+            print(f"❌ エラー: テスト実行中にエラーが発生しました: {e}")
+            browser.close()
+            return False
 
 
 def main():
     print("=" * 60)
-    print("Level 2 - Issue C: formatDistance関数のreturn文チェック")
+    print("Level 2 - Issue C: 距離フォーマット表示チェック")
+    print("=" * 60)
+    print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
     print("=" * 60)
     print()
 
-    success = check_source_code()
+    success = test_distance_format()
 
     print()
     print("=" * 60)
@@ -103,7 +111,8 @@ def main():
     else:
         print("❌ テスト不合格")
         print()
-        print("formatDistance関数のreturn文が不足しています。")
+        print("距離が正しく表示されていません。")
+        print("formatDistance関数のreturn文を確認してください。")
         print("Issue Cの「どうあるべきか」を確認してください。")
         sys.exit(1)
 

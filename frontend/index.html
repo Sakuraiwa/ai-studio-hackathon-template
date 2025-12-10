@@ -354,8 +354,8 @@
             const dateInput = document.getElementById(`visit-date-${spotId}`);
             const selectedDate = dateInput.value;
 
-            // バグ1: 日付が選択されていないかチェックしていない
-            // バグ2: 未来の日付かどうかをチェックしていない
+            // 日付が選択されていないかチェックしていない
+            // 未来の日付かどうかをチェックしていない
 
             if (selectedDate) {
                 // localStorageに保存
@@ -409,7 +409,7 @@
 
         /**
          * 近くの観光地を表示する機能
-         * Issue D のバグ: formatDistance関数がundefinedを返すため、距離が正しく表示されない
+         * formatDistance関数がundefinedを返すため、距離が正しく表示されない
          */
         async function showNearbySpots() {
             const resultsDiv = document.getElementById('nearby-results');
@@ -438,7 +438,7 @@
                             } else {
                                 let html = '';
                                 spots.forEach(spot => {
-                                    // Issue D のバグ: formatDistance関数がundefinedを返す
+                                    // formatDistance関数がundefinedを返す
                                     const distance = formatDistance(spot.distance);
                                     html += `
                                         <div class="nearby-spot-item">
