@@ -66,24 +66,6 @@ def update_rating(self, spot_id, avg_rating, review_count):
 
 ---
 
-## 自己採点 (Self-assessment):
-
-修正が完了したら、以下のコマンドでテストを実行して確認しましょう。
-
-```bash
-# 修正したコードをDockerイメージに反映
-docker compose down
-docker compose build
-docker compose up -d
-
-# テストスクリプトを実行
-docker exec gunma-tourism-app python3 tests/level_5/test_C.py
-```
-
-✅ が表示されれば合格です。
-
----
-
 ## プルリクエスト (Pull Request):
 
 修正が完了したら、プルリクエストを作成してください。

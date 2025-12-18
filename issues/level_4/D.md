@@ -74,24 +74,6 @@ SQLインジェクション攻撃が防がれ、0件が表示される：
 
 ---
 
-## 自己採点 (Self-assessment):
-
-修正が完了したら、以下のコマンドでテストを実行して確認しましょう。
-
-```bash
-# 修正したコードをDockerイメージに反映
-docker compose down
-docker compose build
-docker compose up -d
-
-# テストスクリプトを実行
-docker exec gunma-tourism-app python3 tests/level_4/test_D.py
-```
-
-✅ が表示されれば合格です。
-
----
-
 ## プルリクエスト (Pull Request):
 
 修正が完了したら、プルリクエストを作成してください。
