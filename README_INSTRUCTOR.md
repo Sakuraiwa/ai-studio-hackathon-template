@@ -78,13 +78,15 @@ ai-studio-hackathon/
 ├── issues/                        # issue定義（Markdown）
 │   ├── level_1/                  # 超初級（A-J: 10問）
 │   ├── level_2/                  # 初級（A-J: 10問）
-│   ├── level_3/                  # 中級（A-L: 12問）
-│   └── level_4/                  # 上級（A-G: 7問）
+│   ├── level_3/                  # 中級（A-J: 10問）
+│   ├── level_4/                  # 上級（A-E: 5問）
+│   └── level_5/                  # 最上級（A-G: 7問）
 └── tests/                         # テストスクリプト
     ├── level_1/                  # Level 1テスト（test_A.py 〜 test_J.py）
     ├── level_2/                  # Level 2テスト（test_A.py 〜 test_J.py）
-    ├── level_3/                  # Level 3テスト（test_A.py 〜 test_L.py）
-    └── level_4/                  # Level 4テスト（test_A.py 〜 test_G.py）
+    ├── level_3/                  # Level 3テスト（test_A.py 〜 test_J.py）
+    ├── level_4/                  # Level 4テスト（test_A.py 〜 test_E.py）
+    └── level_5/                  # Level 5テスト（test_A.py 〜 test_G.py）
 ```
 
 ---
@@ -289,8 +291,9 @@ Dockerでアプリケーション起動
 |--------|------------|
 | `level_1/A` 〜 `level_1/J` | HTML/CSS基本チェック |
 | `level_2/A` 〜 `level_2/J` | JavaScript基本チェック（Playwright使用） |
-| `level_3/A` 〜 `level_3/L` | セキュリティ・権限チェック |
-| `level_4/A` 〜 `level_4/G` | パフォーマンス・トランザクション |
+| `level_3/A` 〜 `level_3/J` | バリデーション・エラーハンドリング |
+| `level_4/A` 〜 `level_4/E` | セキュリティ脆弱性（XSS、SQLインジェクション等） |
+| `level_5/A` 〜 `level_5/G` | パフォーマンス・データ整合性 |
 
 ### テスト実行の流れ
 
@@ -561,30 +564,37 @@ if __name__ == "__main__":
 
 実装されているバグの種類：
 
-### Level 1 (超初級)
-- HTML/CSSのスペルミス
+### Level 1 (超初級) - 5点/問
+- HTML/CSSのスペルミス・誤字
 - タグの閉じ忘れ
-- CSSプロパティの誤り
-- フォントサイズ、カラーの間違い
+- CSSプロパティの誤り（カラーコード、フォントサイズ）
+- リンク先の誤り
 
-### Level 2 (初級)
+### Level 2 (初級) - 10点/問
 - JavaScriptの基本的なロジックバグ
-- 計算ミス（Math.ceil/Math.floor）
+- 計算ミス（Math.ceil/Math.floor/toFixed）
 - フィルタリングの不具合
 - イベントリスナーの設定ミス
+- 日付フォーマットの問題
 
-### Level 3 (中級)
+### Level 3 (中級) - 15点/問
+- バリデーション不足（フロントエンド/バックエンド）
+- エラーハンドリングの不備
+- NULLチェック不足
+- ワイルドカード検索の問題
+- リソース削除時の関連処理漏れ
+
+### Level 4 (上級) - 20点/問
 - XSS脆弱性（エスケープ処理不足）
 - SQLインジェクション
 - 権限チェック不足
-- NULLチェック不足
-- トランザクション処理の不備
 
-### Level 4 (上級)
+### Level 5 (最上級) - 25点/問
+- トランザクション管理不備
 - N+1クエリ問題
-- リソースリーク（ファイルクローズ忘れ）
-- トランザクション不備
-- パフォーマンス問題
+- リソースリーク（DB接続のクローズ忘れ）
+- キャッシュ機構の欠如
+- ファイル拡張子偽装対策
 
 ---
 
