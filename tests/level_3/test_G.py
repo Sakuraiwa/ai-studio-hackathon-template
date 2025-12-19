@@ -15,7 +15,7 @@ def test_null_handling():
     レビューを全削除してから/api/statsにアクセスし、
     平均評価がNULLの場合でもエラーが発生しないかをチェック
     """
-    db_path = '/tmp/ai-studio-hackathon-original/data/tourism_review.db'
+    db_path = '/app/data/tourism_review.db'
     backup_reviews = []
 
     with sync_playwright() as p:
