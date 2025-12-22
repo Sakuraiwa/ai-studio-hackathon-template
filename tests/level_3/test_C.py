@@ -62,83 +62,102 @@ def test_review_form_after_logout():
             return False
 
 
-def check_source_code():
+def test_review_form_after_login():
     """
-    spot-detail.jsでログイン状態によるフォーム制御が実装されているかをチェック
+    ログイン状態でレビューフォームが表示されるかをチェック（Playwright）
     """
-    project_root = Path(__file__).parent.parent.parent
-    spot_detail_js = project_root / "frontend" / "spot-detail.js"
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
 
-    if not spot_detail_js.exists():
-        print(f"❌ エラー: {spot_detail_js} が見つかりません")
-        return False
+        try:
+            # spot-detail.htmlにアクセス
+            page.goto('http://localhost:3001/spot-detail.html?id=1', wait_until='networkidle')
 
-    with open(spot_detail_js, 'r', encoding='utf-8') as f:
-        content = f.read()
+            # localStorageにテストユーザー情報を設定してログイン状態にする
+            page.evaluate("""
+                localStorage.setItem('currentUser', JSON.stringify({
+                    user_id: 1,
+                    name: 'テストユーザー'
+                }));
+            """)
 
-    # コメントを除外したコードを取得
-    lines = content.split('\n')
-    active_code = []
-    in_multiline_comment = False
+            # ページをリロードしてログイン状態を反映
+            page.reload(wait_until='networkidle')
+            page.wait_for_timeout(1000)
 
-    for line in lines:
-        stripped = line.strip()
+            print("テストユーザーでログイン状態をシミュレート")
 
-        if '/*' in stripped:
-            in_multiline_comment = True
+            # ログイン状態でのフォーム表示をチェック
+            review_form = page.locator('#reviewForm')
+            login_notice = page.locator('#loginNotice')
 
-        if '*/' in stripped:
-            in_multiline_comment = False
-            continue
+            is_form_visible = review_form.is_visible() if review_form.count() > 0 else False
+            is_notice_visible = login_notice.is_visible() if login_notice.count() > 0 else False
 
-        if in_multiline_comment or stripped.startswith('//'):
-            continue
+            # テスト後にlocalStorageをクリア
+            page.evaluate("localStorage.removeItem('currentUser');")
 
-        active_code.append(line)
+            print("ログイン状態での表示チェック:")
+            print(f"  レビューフォーム: {'表示' if is_form_visible else '非表示'}")
+            print(f"  ログイン通知: {'表示' if is_notice_visible else '非表示'}")
+            print()
 
-    active_code_str = '\n'.join(active_code)
+            browser.close()
 
-    # ログイン状態チェックがあるか
-    import re
-    has_login_check = bool(re.search(r'if\s*\(\s*isLoggedIn\s*\)', active_code_str))
-    has_form_control = bool(re.search(r'reviewForm.*style\.display', active_code_str))
-    has_notice_control = bool(re.search(r'loginNotice.*style\.display', active_code_str))
+            if is_form_visible and not is_notice_visible:
+                print("✅ 合格: ログイン状態ではレビューフォームが表示されています")
+                return True
+            elif not is_form_visible:
+                print("❌ 不合格: ログイン状態なのにレビューフォームが表示されていません")
+                print("   loadUserFromStorage()がページ読み込み時に呼び出されているか確認してください")
+                return False
+            else:
+                print("⚠️  フォームは表示されていますが、ログイン通知も表示されています")
+                return False
 
-    print("\nソースコードチェック:")
-    print(f"  ログイン状態チェック: {'✅ あり' if has_login_check else '❌ なし'}")
-    print(f"  フォーム表示制御: {'✅ あり' if has_form_control else '❌ なし'}")
-    print(f"  ログイン通知制御: {'✅ あり' if has_notice_control else '❌ なし'}")
-    print()
-
-    if has_login_check and has_form_control and has_notice_control:
-        print("✅ 合格: ログイン状態による表示制御が実装されています")
-        return True
-    else:
-        print("❌ 不合格: ログイン状態による表示制御が実装されていません。Issue Cの「どうあるべきか」を確認してください。")
-        return False
+        except Exception as e:
+            print(f"❌ エラー: テスト実行中にエラーが発生しました: {e}")
+            browser.close()
+            return False
 
 
 def main():
     print("=" * 60)
-    print("Level 3 - Issue C: ログアウト後のレビューフォーム表示チェック")
+    print("Level 3 - Issue C: ログイン状態によるレビューフォーム表示制御チェック")
     print("=" * 60)
     print("※ このテストを実行する前に、ポート3001でアプリケーションが起動している必要があります")
     print("=" * 60)
 
-    # まずPlaywrightでテスト
-    result = test_review_form_after_logout()
+    # テスト1: ログアウト状態でフォームが非表示になるか
+    print("\n【テスト1: ログアウト状態のチェック】")
+    logout_result = test_review_form_after_logout()
 
-    # 失敗したらソースコードもチェック
-    if not result:
-        print("\n【追加チェック: ソースコード確認】")
-        result = check_source_code()
+    # テスト2: ログイン状態でフォームが表示されるか
+    print("\n【テスト2: ログイン状態のチェック】")
+    login_result = test_review_form_after_login()
+
+    # 両方のテストに合格する必要がある
+    result = logout_result and login_result
 
     print("=" * 60)
     if result:
         print("🎉 テスト合格！")
+        print()
+        print("ログイン状態によるフォーム表示制御が正しく実装されています。")
+        print("- ログイン時: フォーム表示")
+        print("- ログアウト時: フォーム非表示、ログイン通知表示")
         sys.exit(0)
     else:
         print("💔 テスト不合格")
+        print()
+        if not logout_result:
+            print("- ログアウト状態でのフォーム非表示が正しく動作していません")
+        if not login_result:
+            print("- ログイン状態でのフォーム表示が正しく動作していません")
+            print("  → loadUserFromStorage()がページ読み込み時に呼び出されているか確認してください")
+        print()
+        print("Issue Cの「どうあるべきか」を確認してください。")
         sys.exit(1)
 
 
